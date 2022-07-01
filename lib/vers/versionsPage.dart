@@ -1,8 +1,6 @@
-import 'package:digitalbibleapp/globals.dart';
 import 'package:digitalbibleapp/main/dbProvider.dart';
 import 'package:digitalbibleapp/utils/utilities.dart';
 import 'package:digitalbibleapp/vers/vkModel.dart';
-import 'package:digitalbibleapp/vers/vkProvider.dart';
 import 'package:digitalbibleapp/vers/vkQueries.dart';
 import 'package:flutter/material.dart';
 

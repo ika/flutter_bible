@@ -1,3 +1,4 @@
+import 'package:digitalbibleapp/main/mainBooks.dart';
 import 'package:digitalbibleapp/vers/versionsPage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -43,11 +44,28 @@ class MainDrawer extends StatelessWidget {
               Navigator.pop(context);
               Future.delayed(
                 const Duration(milliseconds: 200),
-                    () {
+                () {
                   Navigator.push(
                     context,
                     CupertinoPageRoute(
                       builder: (context) => const BookMarksPage(),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          ListTile(
+            title: const Text('Book Selection'),
+            onTap: () {
+              Navigator.pop(context);
+              Future.delayed(
+                const Duration(milliseconds: 200),
+                () {
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (context) => const MainBooks(),
                     ),
                   );
                 },

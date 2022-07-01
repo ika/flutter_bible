@@ -1,13 +1,15 @@
 import 'package:digitalbibleapp/cubit/book_name_cubit.dart';
 import 'package:digitalbibleapp/cubit/chapters_cubit.dart';
 import 'package:digitalbibleapp/cubit/version_abbr_cubit.dart';
-import 'package:digitalbibleapp/globals.dart';
-import 'package:digitalbibleapp/main/mainAppBarVersion.dart';
+import 'package:digitalbibleapp/main/mainBooks.dart';
+import 'package:digitalbibleapp/main/mainDialogs.dart';
 import 'package:digitalbibleapp/utils/sharedPrefs.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 SharedPrefs sharedPrefs = SharedPrefs();
+Dialogs dialogs = Dialogs();
 
 final ButtonStyle raisedButtonStyle = ElevatedButton.styleFrom(
   elevation: 8,
@@ -18,35 +20,6 @@ final ButtonStyle raisedButtonStyle = ElevatedButton.styleFrom(
 
 class MainAppBar extends StatelessWidget {
   const MainAppBar({Key key}) : super(key: key);
-
-  Future<dynamic> versionDialog(BuildContext context) {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return AlertDialog(
-          content: SizedBox(
-            height: Globals.dialogHeight,
-            width: double.maxFinite,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Expanded(
-                //   child: AppBarVersions(),
-                // ),
-                Expanded(
-                  child: BlocProvider<VersionAbbrCubit>(
-                    create: (context) => VersionAbbrCubit(),
-                    child: const AppBarVersions(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,18 +32,7 @@ class MainAppBar extends StatelessWidget {
             ElevatedButton(
               style: raisedButtonStyle,
               onPressed: () async {
-                versionDialog(context);
-                // Future.delayed(
-                //   const Duration(milliseconds: 200),
-                //   () {
-                //     Navigator.push(
-                //       context,
-                //       CupertinoPageRoute(
-                //         builder: (context) => const MainVersionsPage(),
-                //       ),
-                //     );
-                //   },
-                // );
+                dialogs.versionsDialog(context);
               },
               child: BlocBuilder<VersionAbbrCubit, String>(
                 builder: (context, verAbbr) {
@@ -91,7 +53,17 @@ class MainAppBar extends StatelessWidget {
             ElevatedButton(
               style: raisedButtonStyle,
               onPressed: () {
-                print('Bookname - finish me');
+                Future.delayed(
+                  const Duration(milliseconds: 200),
+                  () {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const MainBooks(),
+                      ),
+                    );
+                  },
+                );
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,

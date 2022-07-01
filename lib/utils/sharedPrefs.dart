@@ -13,7 +13,7 @@ class SharedPrefs {
   }
 
   Future<String> getLanguageBookName(b, l) async {
-    List<LKey> value = List<LKey>.empty();
+    List<LKeyModel> value = List<LKeyModel>.empty();
     value = await _lkQueries.getBookName(b, l);
     return value.first.n;
   }

@@ -2,6 +2,7 @@ import 'package:digitalbibleapp/cubit/chapters_cubit.dart';
 import 'package:digitalbibleapp/globals.dart';
 import 'package:digitalbibleapp/main/dbModel.dart';
 import 'package:digitalbibleapp/main/dbQueries.dart';
+import 'package:digitalbibleapp/main/mainDialogs.dart';
 import 'package:digitalbibleapp/utils/sharedPrefs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,6 +11,7 @@ DbQueries _dbQueries; // Bible
 Globals globals = Globals();
 PageController pageController;
 SharedPrefs _sharedPrefs = SharedPrefs();
+Dialogs dialogs = Dialogs();
 
 // class MainChapters extends StatefulWidget {
 //   const MainChapters({Key key}) : super(key: key);
@@ -41,6 +43,8 @@ class MainChapters extends StatelessWidget {
     return bible;
   }
 
+  final List<String> contextItems = const ['one', 'two', 'three'];
+
   Widget showListView(int book, int ch) {
     return Container(
       padding: const EdgeInsets.all(15.0),
@@ -52,10 +56,9 @@ class MainChapters extends StatelessWidget {
               itemCount: snapshot.data.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
-                  // onTap: () {
-                  //   showContextDialog(
-                  //       snapshot.data[index].v, snapshot.data[index].t);
-                  // },
+                  onTap: () {
+                    dialogs.contextDialog(context);
+                  },
                   // onLongPress: () {
                   //   print('LONG PRESS');
                   // },

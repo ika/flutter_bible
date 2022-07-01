@@ -57,7 +57,6 @@ class AppBarVersions extends StatelessWidget {
                             //print('AppBarVersions ver $v verAbbr $r');
                           },
                         );
-
                         Future.delayed(
                           const Duration(milliseconds: 200),
                           () {
@@ -74,13 +73,16 @@ class AppBarVersions extends StatelessWidget {
                   },
                   child: SizedBox(
                     height: 32,
-                    child: Text(
-                      snapshot.data[index].m,
-                      textAlign: TextAlign.start,
-                      style: const TextStyle(
-                          fontSize: 16.0,
-                          fontStyle: FontStyle.normal,
-                          color: Colors.black),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        snapshot.data[index].m,
+                        textAlign: TextAlign.start,
+                        style: const TextStyle(
+                            fontSize: 16.0,
+                            fontStyle: FontStyle.normal,
+                            color: Colors.black),
+                      ),
                     ),
                   ),
                 );

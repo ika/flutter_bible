@@ -15,7 +15,7 @@ class LkQueries {
   }
 
   // Get whole book
-  Future<List<LKey>> getBookName(int b, String l) async {
+  Future<List<LKeyModel>> getBookName(int b, String l) async {
     final db = await _lkProvider.database;
 
     final List<Map<String, dynamic>> maps = await db.rawQuery(
@@ -24,7 +24,26 @@ class LkQueries {
     return List.generate(
       maps.length,
       (i) {
-        return LKey(
+        return LKeyModel(
+          i: maps[i]['id'],
+          b: maps[i]['number'], // book number
+          l: maps[i]['code'], // language code
+          n: maps[i]['name'], // book name
+        );
+      },
+    );
+  }
+
+  Future<List<LKeyModel>> getBookList(String l) async {
+    final db = await _lkProvider.database;
+
+    final List<Map<String, dynamic>> maps = await db.rawQuery(
+        "SELECT * FROM '$_dbTable' WHERE code='$l'"); // raw query strings must be enclosed
+
+    return List.generate(
+      maps.length,
+      (i) {
+        return LKeyModel(
           i: maps[i]['id'],
           b: maps[i]['number'], // book number
           l: maps[i]['code'], // language code
