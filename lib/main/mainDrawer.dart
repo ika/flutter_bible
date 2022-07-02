@@ -1,4 +1,4 @@
-import 'package:digitalbibleapp/main/mainBooks.dart';
+import 'package:digitalbibleapp/main/mainSelector.dart';
 import 'package:digitalbibleapp/vers/versionsPage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -65,7 +65,7 @@ class MainDrawer extends StatelessWidget {
                   Navigator.push(
                     context,
                     CupertinoPageRoute(
-                      builder: (context) => const MainBooks(),
+                      builder: (context) => const MainSelector(),
                     ),
                   );
                 },

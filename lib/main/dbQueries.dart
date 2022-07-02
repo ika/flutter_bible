@@ -43,6 +43,14 @@ class DbQueries {
         await db.rawQuery("SELECT MAX(c) FROM $_dbTable WHERE b=$b"));
     return count;
   }
+
+    Future<int> getVerseCount(int b, int c) async {
+    final db = await _dbProvider.database;
+
+    int count = Sqflite.firstIntValue(
+        await db.rawQuery("SELECT MAX(v) FROM $_dbTable WHERE b=$b AND c=$c"));
+    return count;
+  }
 }
 
 // @Query("SELECT * FROM t_bible WHERE b=:book AND c=:chap")

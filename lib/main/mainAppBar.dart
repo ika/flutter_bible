@@ -1,7 +1,7 @@
 import 'package:digitalbibleapp/cubit/book_name_cubit.dart';
 import 'package:digitalbibleapp/cubit/chapters_cubit.dart';
 import 'package:digitalbibleapp/cubit/version_abbr_cubit.dart';
-import 'package:digitalbibleapp/main/mainBooks.dart';
+import 'package:digitalbibleapp/main/mainSelector.dart';
 import 'package:digitalbibleapp/main/mainDialogs.dart';
 import 'package:digitalbibleapp/utils/sharedPrefs.dart';
 import 'package:flutter/cupertino.dart';
@@ -59,7 +59,7 @@ class MainAppBar extends StatelessWidget {
                     Navigator.push(
                       context,
                       CupertinoPageRoute(
-                        builder: (context) => const MainBooks(),
+                        builder: (context) => const MainSelector(),
                       ),
                     );
                   },
