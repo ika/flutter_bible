@@ -2,10 +2,14 @@ import 'package:digitalbibleapp/globals.dart';
 import 'package:digitalbibleapp/langs/lkModel.dart';
 import 'package:digitalbibleapp/langs/lkQueries.dart';
 import 'package:digitalbibleapp/main/dbQueries.dart';
+import 'package:digitalbibleapp/main/mainPage.dart';
+import 'package:digitalbibleapp/utils/sharedPrefs.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 LkQueries lkQueries = LkQueries();
 DbQueries dbQueries = DbQueries();
+SharedPrefs sharedPrefs = SharedPrefs();
 
 class MainSelector extends StatefulWidget {
   const MainSelector({Key key}) : super(key: key);
@@ -45,12 +49,28 @@ class _MainSelectorState extends State<MainSelector>
               children: List.generate(
                 snapshot.data,
                 (index) {
-                  int chap = index + 1;
+                  int verse = index + 1;
                   return Center(
-                    child: Text(
-                      '$chap',
-                      style: const TextStyle(
-                          fontSize: 18.0), //fontWeight: FontWeight.bold),
+                    child: GestureDetector(
+                      onTap: () {
+                        //Navigator.pop(context);
+                        Future.delayed(
+                          const Duration(milliseconds: 200),
+                          () {
+                            Navigator.push(
+                              context,
+                              CupertinoPageRoute(
+                                builder: (context) => const MainPageCall(),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      child: Text(
+                        '$verse',
+                        style: const TextStyle(
+                            fontSize: 18.0), //fontWeight: FontWeight.bold),
+                      ),
                     ),
                   );
                 },
@@ -81,7 +101,13 @@ class _MainSelectorState extends State<MainSelector>
                   return Center(
                     child: GestureDetector(
                       onTap: () {
-                        tabController.animateTo(2);
+                        // save chapter
+                        sharedPrefs.saveChapter(chap).then(
+                          (value) {
+                            Globals.bookChapter = chap;
+                            tabController.animateTo(2);
+                          },
+                        );
                       },
                       child: Text(
                         '$chap',
@@ -118,7 +144,21 @@ class _MainSelectorState extends State<MainSelector>
                     style: const TextStyle(fontSize: 16.0),
                   ),
                   onTap: () {
-                    tabController.animateTo(1);
+                    int book = snapshot.data[index].b;
+                    // save book
+                    sharedPrefs.saveBook(book).then(
+                      (value) {
+                        Globals.bibleBook = book;
+                        // save chapter
+                        sharedPrefs.saveChapter(1).then(
+                          (value) {
+                            Globals.bookChapter = 1;
+                            tabController.animateTo(1);
+                          },
+                        );
+                        //Globals.chapterVerse = 1;
+                      },
+                    );
                   },
                   trailing: const Icon(Icons.arrow_right),
                 );

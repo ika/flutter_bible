@@ -20,11 +20,26 @@ Utilities utilities = Utilities();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // read version
   _sharedPrefs.readVersion().then(
     (v) {
       Globals.bibleVersion = v;
-      utilities.setDialogeHeight();
-      runApp(const BibleApp());
+      //read book
+      _sharedPrefs.readBook().then(
+        (v) {
+          Globals.bibleBook = v;
+          //read chapter
+          _sharedPrefs.readChapter().then(
+            (v) {
+              Globals.bookChapter = v;
+              utilities.setDialogeHeight();
+              runApp(
+                const BibleApp(),
+              );
+            },
+          );
+        },
+      );
     },
   );
 

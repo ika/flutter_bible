@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 DbQueries _dbQueries; // Bible
-Globals globals = Globals();
+//Globals globals = Globals();
 PageController pageController;
 SharedPrefs _sharedPrefs = SharedPrefs();
 Dialogs dialogs = Dialogs();
@@ -122,18 +122,21 @@ class MainChapters extends StatelessWidget {
     );
   }
 
-  void setPageController() {
-    _sharedPrefs.readChapter().then(
-      (c) {
-        pageController = PageController(initialPage: c - 1);
-      },
-    );
-  }
+  // void setPageController() {
+    // _sharedPrefs.readChapter().then(
+    //   (c) {
+    //     Globals.bookChapter = c;
+    //     pageController = PageController(initialPage: c - 1);
+    //   },
+    // );
+  //   pageController = PageController(initialPage: Globals.bookChapter - 1);
+  // }
 
   @override
   Widget build(BuildContext context) {
+    pageController = PageController(initialPage: Globals.bookChapter - 1);
     _dbQueries = DbQueries();
-    setPageController();
-    return thisChapterView(43);
+    //setPageController();
+    return thisChapterView(Globals.bibleBook); // Bible book
   }
 }
