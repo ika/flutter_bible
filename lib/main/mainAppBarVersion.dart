@@ -47,14 +47,18 @@ class AppBarVersions extends StatelessWidget {
                   onTap: () {
                     //Navigator.pop(context, false);
                     int v = snapshot.data[index].n;
+                    String l = snapshot.data[index].l; // language
                     Globals.bibleVersion = v;
                     sharedPrefs.saveVersion(v).then(
                       (value) async {
                         readVersionAbbr(v).then(
                           (r) {
-                            sharedPrefs.saveVerAbbr(r);
-
-                            //print('AppBarVersions ver $v verAbbr $r');
+                            sharedPrefs.saveVerAbbr(r).then((value) {
+                              Globals.verAbbr = r;
+                            });
+                            sharedPrefs.saveLang(l).then((value) {
+                              Globals.bibleLang = l;
+                            });
                           },
                         );
                         Future.delayed(

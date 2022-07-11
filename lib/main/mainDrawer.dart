@@ -3,7 +3,7 @@ import 'package:digitalbibleapp/vers/versionsPage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../bmarks/bookPage.dart';
+import '../bmarks/bookMarksPage.dart';
 
 class MainDrawer extends StatelessWidget {
   const MainDrawer({Key key}) : super(key: key);

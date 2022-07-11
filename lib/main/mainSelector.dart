@@ -22,10 +22,12 @@ class _MainSelectorState extends State<MainSelector>
     with SingleTickerProviderStateMixin {
   TabController tabController;
 
+  List<String> tabNames = ['Books', 'Chapters', 'Verses'];
+
   @override
   initState() {
     super.initState();
-    tabController = TabController(length: 3, vsync: this);
+    tabController = TabController(length: 2, vsync: this);
     tabController.addListener(() {
       setState(() {});
     });
@@ -35,6 +37,20 @@ class _MainSelectorState extends State<MainSelector>
   void dispose() {
     tabController.dispose();
     super.dispose();
+  }
+
+  backButton(BuildContext context) {
+    Future.delayed(
+      const Duration(milliseconds: 200),
+      () {
+        Navigator.push(
+          context,
+          CupertinoPageRoute(
+            builder: (context) => const MainPageCall(),
+          ),
+        );
+      },
+    );
   }
 
   Widget versesWidget() {
@@ -53,18 +69,8 @@ class _MainSelectorState extends State<MainSelector>
                   return Center(
                     child: GestureDetector(
                       onTap: () {
-                        //Navigator.pop(context);
-                        Future.delayed(
-                          const Duration(milliseconds: 200),
-                          () {
-                            Navigator.push(
-                              context,
-                              CupertinoPageRoute(
-                                builder: (context) => const MainPageCall(),
-                              ),
-                            );
-                          },
-                        );
+                        Globals.chapterVerse = index;
+                        backButton(context);
                       },
                       child: Text(
                         '$verse',
@@ -105,7 +111,8 @@ class _MainSelectorState extends State<MainSelector>
                         sharedPrefs.saveChapter(chap).then(
                           (value) {
                             Globals.bookChapter = chap;
-                            tabController.animateTo(2);
+                            //tabController.animateTo(2);
+                            backButton(context);
                           },
                         );
                       },
@@ -152,11 +159,10 @@ class _MainSelectorState extends State<MainSelector>
                         // save chapter
                         sharedPrefs.saveChapter(1).then(
                           (value) {
-                            Globals.bookChapter = 1;
+                            Globals.bookChapter = Globals.chapterVerse = 1;
                             tabController.animateTo(1);
                           },
                         );
-                        //Globals.chapterVerse = 1;
                       },
                     );
                   },
@@ -175,10 +181,14 @@ class _MainSelectorState extends State<MainSelector>
     );
   }
 
-  List<String> tabNames = ['Books', 'Chapters', 'Verses'];
-
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        backButton(context);
+        return false;
+      },
+      child: Scaffold(
         appBar: AppBar(
           backgroundColor: const Color.fromRGBO(64, 75, 96, .9),
           elevation: 0.1,
@@ -189,7 +199,7 @@ class _MainSelectorState extends State<MainSelector>
             tabs: [
               Tab(text: tabNames[0]),
               Tab(text: tabNames[1]),
-              Tab(text: tabNames[2]),
+              //Tab(text: tabNames[2]),
             ],
           ),
         ),
@@ -202,10 +212,12 @@ class _MainSelectorState extends State<MainSelector>
             Center(
               child: chaptersWidget(),
             ),
-            Center(
-              child: versesWidget(),
-            ),
+            // Center(
+            //   child: versesWidget(),
+            // ),
           ],
         ),
-      );
+      ),
+    );
+  }
 }

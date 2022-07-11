@@ -1,35 +1,48 @@
+import 'package:digitalbibleapp/bmarks/bmModel.dart';
+import 'package:digitalbibleapp/bmarks/bmQueries.dart';
 import 'package:digitalbibleapp/cubit/chapters_cubit.dart';
 import 'package:digitalbibleapp/globals.dart';
 import 'package:digitalbibleapp/main/dbModel.dart';
 import 'package:digitalbibleapp/main/dbQueries.dart';
-import 'package:digitalbibleapp/main/mainDialogs.dart';
+import 'package:digitalbibleapp/dialogs.dart';
 import 'package:digitalbibleapp/utils/sharedPrefs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 DbQueries _dbQueries; // Bible
-//Globals globals = Globals();
 PageController pageController;
 SharedPrefs _sharedPrefs = SharedPrefs();
-Dialogs dialogs = Dialogs();
+Dialogs _dialogs = Dialogs();
+BmQueries _bmQueries = BmQueries();
+//ItemScrollController _itemScrollController = ItemScrollController();
 
-// class MainChapters extends StatefulWidget {
-//   const MainChapters({Key key}) : super(key: key);
-//
-//   @override
-//   State<StatefulWidget> createState() => _MainChaptersState();
-// }
-//
-// class _MainChaptersState extends State<MainChapters> {
-//
-//   @override
-//   void initState() {
-//     _dbQueries = DbQueries();
-//     super.initState();
-//   }
-
-class MainChapters extends StatelessWidget {
+class MainChapters extends StatefulWidget {
   const MainChapters({Key key}) : super(key: key);
+
+  @override
+  State<MainChapters> createState() => _MainChaptersState();
+}
+
+class _MainChaptersState extends State<MainChapters> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) {
+        print('BUILD COMPLETE');
+        //scrollToItem();
+      },
+    );
+  }
+
+  // Future scrollToItem() async {
+  //   _itemScrollController.jumpTo(index: 10);
+  //   // scrollController.scrollTo(
+  //   //   index: 5,
+  //   //   duration: const Duration(milliseconds: 200)
+  //   // );
+  // }
 
   Future<List<Bible>> getBookText(int book, int ch) async {
     return await _dbQueries.getBookChapter(book, ch);
@@ -43,7 +56,47 @@ class MainChapters extends StatelessWidget {
     return bible;
   }
 
-  final List<String> contextItems = const ['one', 'two', 'three'];
+  Color colorSelector(int index) {
+    // if (index + 1 == Globals.chapterVerse) {
+    //   Globals.chapterVerse = 0;
+    //   return Colors.lightGreenAccent;
+    // } else {
+    //   Globals.chapterVerse = 0;
+    //   return Colors.white;
+    // }
+    return Colors.white;
+  }
+
+  SnackBar bmSnackBar = const SnackBar(
+    content: Text('Book Mark Saved!'),
+  );
+
+  saveBookMark() {
+    List<String> stringTitle = [
+      Globals.verAbbr,
+      ' ',
+      Globals.bookName,
+      ' ',
+      '${Globals.bookChapter}',
+      ':',
+      '${Globals.verseNumber}'
+    ];
+
+    final model = BmModel(
+      //id: 0,
+      title: stringTitle.join(), //'${Globals.verseNumber}',
+      subtitle: Globals.verseText,
+      version: Globals.bibleVersion,
+      book: Globals.bibleBook,
+      chapter: Globals.bookChapter,
+      verse: Globals.verseNumber,
+    );
+    _bmQueries.saveBookMark(model).then(
+      (value) {
+        ScaffoldMessenger.of(context).showSnackBar(bmSnackBar);
+      },
+    );
+  }
 
   Widget showListView(int book, int ch) {
     return Container(
@@ -52,12 +105,30 @@ class MainChapters extends StatelessWidget {
         future: getVersionText(book, ch),
         builder: (context, AsyncSnapshot<List<Bible>> snapshot) {
           if (snapshot.hasData) {
+            //return ScrollablePositionedList.builder(
             return ListView.builder(
               itemCount: snapshot.data.length,
+              //itemScrollController: _itemScrollController,
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () {
-                    dialogs.contextDialog(context);
+                    Globals.verseNumber = snapshot.data[index].v;
+                    Globals.verseText = snapshot.data[index].t;
+                    _dialogs.contextDialog(context).then(
+                      (value) {
+                        switch (value) {
+                          case 0: // compare
+                            break;
+                          case 1: // bookmarks
+                            saveBookMark();
+                            break;
+                          case 2: // highlight
+                            break;
+                          default:
+                            break;
+                        }
+                      },
+                    );
                   },
                   // onLongPress: () {
                   //   print('LONG PRESS');
@@ -106,15 +177,16 @@ class MainChapters extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             pageSnapping: true,
             physics: const BouncingScrollPhysics(),
+            children: chapterCountFunc(book, chapterCount),
             onPageChanged: (index) {
               int c = index + 1;
               _sharedPrefs.saveChapter(c).then(
                 (value) {
+                  Globals.bookChapter = c;
                   BlocProvider.of<ChapterCubit>(context).setChapter(c);
                 },
               );
             },
-            children: chapterCountFunc(book, chapterCount),
           );
         }
         return const Center(child: CircularProgressIndicator());
@@ -122,21 +194,10 @@ class MainChapters extends StatelessWidget {
     );
   }
 
-  // void setPageController() {
-    // _sharedPrefs.readChapter().then(
-    //   (c) {
-    //     Globals.bookChapter = c;
-    //     pageController = PageController(initialPage: c - 1);
-    //   },
-    // );
-  //   pageController = PageController(initialPage: Globals.bookChapter - 1);
-  // }
-
   @override
   Widget build(BuildContext context) {
     pageController = PageController(initialPage: Globals.bookChapter - 1);
     _dbQueries = DbQueries();
-    //setPageController();
     return thisChapterView(Globals.bibleBook); // Bible book
   }
 }

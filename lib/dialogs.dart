@@ -4,11 +4,17 @@ import 'package:digitalbibleapp/main/mainAppBarVersion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+//BmQueries _bmQueries = BmQueries();
+
+// SnackBar snackBar = const SnackBar(
+//   content: Text('Yay! A SnackBar!'),
+// );
+
 class Dialogs {
 
-  List<String> contextMenu = ['Compare', 'Bookmanr', 'Hilight'];
+  List<String> contextMenu = ['Compare', 'Bookmark', 'Highlight'];
 
-  Future<dynamic> contextDialog(BuildContext context) {
+    Future<dynamic> contextDialog(BuildContext context) {
     return showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -29,8 +35,7 @@ class Dialogs {
                         //onPressed: () => Navigator.pop(context),
                         child: Text(contextMenu[index]),
                         onPressed: () {
-                          Navigator.pop(context);
-                          print('pressed ' + contextMenu[index]);
+                          Navigator.of(context).pop(index);
                         },
                       );
                     },
@@ -73,4 +78,5 @@ class Dialogs {
       },
     );
   }
+
 }
