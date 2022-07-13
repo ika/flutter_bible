@@ -8,7 +8,6 @@ import 'package:digitalbibleapp/dialogs.dart';
 import 'package:digitalbibleapp/utils/sharedPrefs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 DbQueries _dbQueries; // Bible
 PageController pageController;
@@ -166,7 +165,7 @@ class _MainChaptersState extends State<MainChapters> {
     return pagesList;
   }
 
-  Widget thisChapterView(int book) {
+  Widget chaptersList(int book) {
     return FutureBuilder<int>(
       future: _dbQueries.getChapterCount(book),
       builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
@@ -198,6 +197,6 @@ class _MainChaptersState extends State<MainChapters> {
   Widget build(BuildContext context) {
     pageController = PageController(initialPage: Globals.bookChapter - 1);
     _dbQueries = DbQueries();
-    return thisChapterView(Globals.bibleBook); // Bible book
+    return chaptersList(Globals.bibleBook); // Bible book
   }
 }

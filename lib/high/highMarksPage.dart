@@ -1,36 +1,34 @@
-import 'package:digitalbibleapp/dialogs.dart';
-import 'package:digitalbibleapp/globals.dart';
+import 'package:digitalbibleapp/high/hlModel.dart';
+import 'package:digitalbibleapp/high/hlQueries.dart';
 import 'package:flutter/material.dart';
-import 'package:digitalbibleapp/bmarks/bmModel.dart';
-import 'package:digitalbibleapp/bmarks/bmQueries.dart';
 
 // Bookmarks
 
-BmQueries _bmQueries = BmQueries();
+HlQueries _hlQueries = HlQueries();
 
 enum ConfirmAction { cancel, accept }
 
-class BookMarksPage extends StatefulWidget {
-  const BookMarksPage({Key key}) : super(key: key);
+class HighLightsPage extends StatefulWidget {
+  const HighLightsPage({Key key}) : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _BookMarkState();
+  State<StatefulWidget> createState() => _HighLightsPage();
 }
 
-class _BookMarkState extends State<BookMarksPage> {
-  List<BmModel> list = List<BmModel>.empty();
+class _HighLightsPage extends State<HighLightsPage> {
+  List<HlModel> list = List<HlModel>.empty();
 
-  SnackBar bmDeletedSnackBar = const SnackBar(
-    content: Text('Book Mark Deleted!'),
+  SnackBar hlDeletedSnackBar = const SnackBar(
+    content: Text('HighLight Deleted!'),
   );
 
-  Future bookMarkDialog(context, list) async {
+  Future highLightDialog(context, list) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete this bookmark?'),
+          title: const Text('Delete this highlight?'),
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
@@ -60,16 +58,16 @@ class _BookMarkState extends State<BookMarksPage> {
     );
   }
 
-  Widget bookMarksList(list, context) {
+  Widget showHighLightList(list, context) {
     GestureDetector makeListTile(list, int index) => GestureDetector(
           onHorizontalDragEnd: (DragEndDetails details) {
             if (details.primaryVelocity > 0 || details.primaryVelocity < 0) {
-              bookMarkDialog(context, list[index]).then(
+              highLightDialog(context, list[index]).then(
                 (value) {
                   if (value == ConfirmAction.accept) {
-                    _bmQueries.deleteBookMark(list[index].id).then(
+                    _hlQueries.deleteHighLight(list[index].id).then(
                       (value) {
-                        ScaffoldMessenger.of(context).showSnackBar(bmDeletedSnackBar);
+                        ScaffoldMessenger.of(context).showSnackBar(hlDeletedSnackBar);
                         setState(
                           () {
                             //list.removeAt(index);
@@ -141,12 +139,12 @@ class _BookMarkState extends State<BookMarksPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<BmModel>>(
-      future: _bmQueries.getBookMarkList(),
-      builder: (context, AsyncSnapshot<List<BmModel>> snapshot) {
+    return FutureBuilder<List<HlModel>>(
+      future: _hlQueries.getHighLightList(),
+      builder: (context, AsyncSnapshot<List<HlModel>> snapshot) {
         if (snapshot.hasData) {
           list = snapshot.data;
-          return bookMarksList(list, context);
+          return showHighLightList(list, context);
         } else if (snapshot.hasError) {
           return Text("${snapshot.error}");
         }

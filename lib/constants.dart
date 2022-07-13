@@ -16,6 +16,9 @@ class Constants {
   // Bookmarks
   static const String bmksDbname = "dba_bkmarks_1.db";
 
+    // Highlights
+  static const String hltsDbname = "dba_hlights_1.db";
+
   // Language Key
   static const String lkeyDbname = "dba_lkey_1.db";
 
