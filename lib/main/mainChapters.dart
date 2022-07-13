@@ -2,6 +2,8 @@ import 'package:digitalbibleapp/bmarks/bmModel.dart';
 import 'package:digitalbibleapp/bmarks/bmQueries.dart';
 import 'package:digitalbibleapp/cubit/chapters_cubit.dart';
 import 'package:digitalbibleapp/globals.dart';
+import 'package:digitalbibleapp/high/hlModel.dart';
+import 'package:digitalbibleapp/high/hlQueries.dart';
 import 'package:digitalbibleapp/main/dbModel.dart';
 import 'package:digitalbibleapp/main/dbQueries.dart';
 import 'package:digitalbibleapp/dialogs.dart';
@@ -14,6 +16,7 @@ PageController pageController;
 SharedPrefs _sharedPrefs = SharedPrefs();
 Dialogs _dialogs = Dialogs();
 BmQueries _bmQueries = BmQueries();
+HlQueries _hlQueries = HlQueries();
 //ItemScrollController _itemScrollController = ItemScrollController();
 
 class MainChapters extends StatefulWidget {
@@ -70,6 +73,10 @@ class _MainChaptersState extends State<MainChapters> {
     content: Text('Book Mark Saved!'),
   );
 
+  SnackBar hlSnackBar = const SnackBar(
+    content: Text('Highlight Saved!'),
+  );
+
   saveBookMark() {
     List<String> stringTitle = [
       Globals.verAbbr,
@@ -83,7 +90,7 @@ class _MainChaptersState extends State<MainChapters> {
 
     final model = BmModel(
       //id: 0,
-      title: stringTitle.join(), //'${Globals.verseNumber}',
+      title: stringTitle.join(),
       subtitle: Globals.verseText,
       version: Globals.bibleVersion,
       book: Globals.bibleBook,
@@ -93,6 +100,33 @@ class _MainChaptersState extends State<MainChapters> {
     _bmQueries.saveBookMark(model).then(
       (value) {
         ScaffoldMessenger.of(context).showSnackBar(bmSnackBar);
+      },
+    );
+  }
+
+  saveHighLight() {
+    List<String> stringTitle = [
+      Globals.verAbbr,
+      ' ',
+      Globals.bookName,
+      ' ',
+      '${Globals.bookChapter}',
+      ':',
+      '${Globals.verseNumber}'
+    ];
+
+    final model = HlModel(
+      //id: 0,
+      title: stringTitle.join(),
+      subtitle: Globals.verseText,
+      version: Globals.bibleVersion,
+      book: Globals.bibleBook,
+      chapter: Globals.bookChapter,
+      verse: Globals.verseNumber,
+    );
+    _hlQueries.saveHighLight(model).then(
+      (value) {
+        ScaffoldMessenger.of(context).showSnackBar(hlSnackBar);
       },
     );
   }
@@ -122,6 +156,7 @@ class _MainChaptersState extends State<MainChapters> {
                             saveBookMark();
                             break;
                           case 2: // highlight
+                            saveHighLight();
                             break;
                           default:
                             break;

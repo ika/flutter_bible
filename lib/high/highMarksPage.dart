@@ -127,7 +127,7 @@ class _HighLightsPage extends State<HighLightsPage> {
     final topAppBar = AppBar(
       elevation: 0.1,
       backgroundColor: const Color.fromRGBO(64, 75, 96, .9),
-      title: const Text('Bookmarks'),
+      title: const Text('Highlights'),
     );
 
     return Scaffold(

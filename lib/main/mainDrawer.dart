@@ -1,3 +1,4 @@
+import 'package:digitalbibleapp/high/highMarksPage.dart';
 import 'package:digitalbibleapp/main/mainSelector.dart';
 import 'package:digitalbibleapp/vers/versionsPage.dart';
 import 'package:flutter/cupertino.dart';
@@ -49,6 +50,23 @@ class MainDrawer extends StatelessWidget {
                     context,
                     CupertinoPageRoute(
                       builder: (context) => const BookMarksPage(),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+                    ListTile(
+            title: const Text('Highlights'),
+            onTap: () {
+              Navigator.pop(context);
+              Future.delayed(
+                const Duration(milliseconds: 200),
+                () {
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (context) => const HighLightsPage(),
                     ),
                   );
                 },
