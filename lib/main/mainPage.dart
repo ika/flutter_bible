@@ -14,14 +14,19 @@ class MainPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-     drawer: MainDrawer(),
+      drawer: MainDrawer(),
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(kToolbarHeight),
         child: MainAppBar(),
       ),
-      body: SafeArea(
-        child: MainChapters(),
-      ),
+      body: MainChapters(),
+      // floatingActionButton: FloatingActionButton(
+      //   backgroundColor: Colors.grey,
+      //   onPressed: () {
+      //     //MainChapters.
+      //   },
+      //   child: const Icon(Icons.add, color: Colors.white),
+      // ),
     );
   }
 }

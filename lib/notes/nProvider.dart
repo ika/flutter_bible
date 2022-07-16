@@ -1,22 +1,19 @@
-import 'dart:async';
 import 'package:digitalbibleapp/constants.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-// Bookmarks database helper
-
-class BmProvider {
-  final String _dbName = Constants.bmksDbname;
-  final String _dbTable = 'bmks_table';
-
-  static BmProvider _dbProvider;
+class NtProvider {
+  static NtProvider _ntProvider;
   static Database _database;
 
-  BmProvider._createInstance();
+  final String _dbName = Constants.notesDbname;
+  final String _tableName = 'notes';
 
-  factory BmProvider() {
-    _dbProvider ??= BmProvider._createInstance();
-    return _dbProvider;
+  NtProvider._createInstance();
+
+  factory NtProvider() {
+    _ntProvider ??= NtProvider._createInstance();
+    return _ntProvider;
   }
 
   Future<Database> get database async {
@@ -33,15 +30,12 @@ class BmProvider {
       version: 1,
       onOpen: (db) async {},
       onCreate: (Database db, int version) async {
+        // Create the note table
         await db.execute('''
-                CREATE TABLE IF NOT EXISTS $_dbTable (
+                CREATE TABLE $_tableName(
                     id INTEGER PRIMARY KEY,
-                    title TEXT DEFAULT '',
-                    subtitle TEXT DEFAULT '',
-                    version INTEGER DEFAULT 0,
-                    book INTEGER DEFAULT 0,
-                    chapter INTEGER DEFAULT 0,
-                    verse INTEGER DEFAULT 0
+                    time INTEGER DEFAULT 0,
+                    contents TEXT DEFAULT ''
                 )
             ''');
       },

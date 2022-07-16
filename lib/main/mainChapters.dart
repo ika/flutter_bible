@@ -10,6 +10,7 @@ import 'package:digitalbibleapp/dialogs.dart';
 import 'package:digitalbibleapp/utils/sharedPrefs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 DbQueries _dbQueries; // Bible
 PageController pageController;
@@ -17,7 +18,10 @@ SharedPrefs _sharedPrefs = SharedPrefs();
 Dialogs _dialogs = Dialogs();
 BmQueries _bmQueries = BmQueries();
 HlQueries _hlQueries = HlQueries();
-//ItemScrollController _itemScrollController = ItemScrollController();
+
+final ItemScrollController itemScrollController = ItemScrollController();
+final ItemPositionsListener itemPositionsListener =
+    ItemPositionsListener.create();
 
 class MainChapters extends StatefulWidget {
   const MainChapters({Key key}) : super(key: key);
@@ -30,21 +34,20 @@ class _MainChaptersState extends State<MainChapters> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) {
-        print('BUILD COMPLETE');
-        //scrollToItem();
-      },
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => scrollToIndex(10));
   }
 
-  // Future scrollToItem() async {
-  //   _itemScrollController.jumpTo(index: 10);
-  //   // scrollController.scrollTo(
-  //   //   index: 5,
-  //   //   duration: const Duration(milliseconds: 200)
-  //   // );
-  // }
+  void scrollToIndex(int idx) {
+    if (itemScrollController.isAttached) {
+      itemScrollController.jumpTo(index: idx);
+      // itemScrollController.scrollTo(
+      //     index: idx,
+      //     duration: const Duration(milliseconds: 200),
+      //     curve: Curves.easeInOutCubic);
+    } else {
+      print('temScrollController in NOT attached');
+    }
+  }
 
   Future<List<Bible>> getBookText(int book, int ch) async {
     return await _dbQueries.getBookChapter(book, ch);
@@ -138,10 +141,11 @@ class _MainChaptersState extends State<MainChapters> {
         future: getVersionText(book, ch),
         builder: (context, AsyncSnapshot<List<Bible>> snapshot) {
           if (snapshot.hasData) {
-            //return ScrollablePositionedList.builder(
-            return ListView.builder(
+            return ScrollablePositionedList.builder(
+              //return ListView.builder(
               itemCount: snapshot.data.length,
-              //itemScrollController: _itemScrollController,
+              itemScrollController: itemScrollController,
+              itemPositionsListener: itemPositionsListener,
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () {
@@ -164,9 +168,6 @@ class _MainChaptersState extends State<MainChapters> {
                       },
                     );
                   },
-                  // onLongPress: () {
-                  //   print('LONG PRESS');
-                  // },
                   child: Row(
                     children: [
                       Expanded(
@@ -232,6 +233,6 @@ class _MainChaptersState extends State<MainChapters> {
   Widget build(BuildContext context) {
     pageController = PageController(initialPage: Globals.bookChapter - 1);
     _dbQueries = DbQueries();
-    return chaptersList(Globals.bibleBook); // Bible book
+    return showListView(1, 1); //chaptersList(Globals.bibleBook); // Bible book
   }
 }

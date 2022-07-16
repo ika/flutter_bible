@@ -1,28 +1,21 @@
-// @dart=2.9
-
-// Notes model
-
-class NModel {
+class NtModel {
   int id;
   int time;
-  String title;
-  String subtitle;
+  String contents;
 
-  NModel({this.id, this.title, this.subtitle, this.time});
+  NtModel({this.id, this.contents, this.time});
 
   // Create a Note from JSON data
-  factory NModel.fromJson(Map<String, dynamic> json) => NModel(
+  factory NtModel.fromJson(Map<String, dynamic> json) => NtModel(
         id: json["id"],
         time: json["time"],
-        title: json["title"],
-        subtitle: json["subtitle"]
+        contents: json["contents"],
       );
 
   // Convert our Note to JSON to make it easier when we store it in the database
   Map<String, dynamic> toJson() => {
         "id": id,
         "time": time,
-        "title": title,
-        "subtitle": subtitle
+        "contents": contents,
       };
 }
