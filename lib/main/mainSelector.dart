@@ -27,7 +27,7 @@ class _MainSelectorState extends State<MainSelector>
   @override
   initState() {
     super.initState();
-    tabController = TabController(length: 2, vsync: this);
+    tabController = TabController(length: 3, vsync: this);
     tabController.addListener(() {
       setState(() {});
     });
@@ -70,6 +70,7 @@ class _MainSelectorState extends State<MainSelector>
                     child: GestureDetector(
                       onTap: () {
                         Globals.chapterVerse = index;
+                        Globals.scrollTo = true;
                         backButton(context);
                       },
                       child: Text(
@@ -111,8 +112,8 @@ class _MainSelectorState extends State<MainSelector>
                         sharedPrefs.saveChapter(chap).then(
                           (value) {
                             Globals.bookChapter = chap;
-                            //tabController.animateTo(2);
-                            backButton(context);
+                            tabController.animateTo(2);
+                            //backButton(context);
                           },
                         );
                       },
@@ -199,7 +200,7 @@ class _MainSelectorState extends State<MainSelector>
             tabs: [
               Tab(text: tabNames[0]),
               Tab(text: tabNames[1]),
-              //Tab(text: tabNames[2]),
+              Tab(text: tabNames[2]),
             ],
           ),
         ),
@@ -212,9 +213,9 @@ class _MainSelectorState extends State<MainSelector>
             Center(
               child: chaptersWidget(),
             ),
-            // Center(
-            //   child: versesWidget(),
-            // ),
+            Center(
+              child: versesWidget(),
+            ),
           ],
         ),
       ),

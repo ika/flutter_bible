@@ -36,11 +36,6 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
-  // @override
-  // void dispose() {
-  //   super.dispose();
-  // }
-
   _handleOnChange() {
     if (id == null) {
       // no id, save

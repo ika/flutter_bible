@@ -13,4 +13,7 @@ class Globals {
 
   // Bookmarks
   static int bookMarkId = 0; // bookmark id
+
+  // Book, Chapter, verse selector
+  static bool scrollTo = false;
 }

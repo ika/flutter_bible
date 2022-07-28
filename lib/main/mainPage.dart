@@ -20,13 +20,6 @@ class MainPage extends StatelessWidget {
         child: MainAppBar(),
       ),
       body: MainChapters(),
-      // floatingActionButton: FloatingActionButton(
-      //   backgroundColor: Colors.grey,
-      //   onPressed: () {
-      //     //MainChapters.
-      //   },
-      //   child: const Icon(Icons.add, color: Colors.white),
-      // ),
     );
   }
 }

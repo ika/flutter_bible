@@ -4,16 +4,6 @@ import 'package:digitalbibleapp/utils/sharedPrefs.dart';
 import 'package:digitalbibleapp/utils/utilities.dart';
 import 'package:flutter/material.dart';
 
-// int v = 0; // = 1; // bible version number, e.g. KJV = 1
-// int b = 0; // = 43; // John = 43
-// int c = 0; // = 1; // chapter
-// String l = ''; // language code
-// String n = ''; // book name
-// String r = ''; // book abbreviation
-
-// LkQueries _lkQueries = LkQueries();
-// VkQueries _vkQueries = VkQueries();
-
 SharedPrefs _sharedPrefs = SharedPrefs();
 Utilities utilities = Utilities();
 
@@ -55,7 +45,7 @@ class BibleApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MainPageCall(),
+      home: MainPageCall(),
     );
   }
 }

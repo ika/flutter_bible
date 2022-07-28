@@ -16,12 +16,14 @@ DbQueries _dbQueries; // Bible
 PageController pageController;
 SharedPrefs _sharedPrefs = SharedPrefs();
 Dialogs _dialogs = Dialogs();
+//Globals _globals = Globals();
 BmQueries _bmQueries = BmQueries();
 HlQueries _hlQueries = HlQueries();
 
-final ItemScrollController itemScrollController = ItemScrollController();
-final ItemPositionsListener itemPositionsListener =
-    ItemPositionsListener.create();
+ItemScrollController initialScrollController = ItemScrollController();
+//ItemScrollController itemScrollControllerPage;
+// final ItemPositionsListener itemPositionsListener =
+//     ItemPositionsListener.create();
 
 class MainChapters extends StatefulWidget {
   const MainChapters({Key key}) : super(key: key);
@@ -33,20 +35,25 @@ class MainChapters extends StatefulWidget {
 class _MainChaptersState extends State<MainChapters> {
   @override
   void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => scrollToIndex());
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => scrollToIndex(10));
   }
 
-  void scrollToIndex(int idx) {
-    if (itemScrollController.isAttached) {
-      itemScrollController.jumpTo(index: idx);
-      // itemScrollController.scrollTo(
-      //     index: idx,
-      //     duration: const Duration(milliseconds: 200),
-      //     curve: Curves.easeInOutCubic);
-    } else {
-      print('temScrollController in NOT attached');
-    }
+  void scrollToIndex() {
+    Future.delayed(
+      const Duration(milliseconds: 400),
+      () {
+        if (initialScrollController.isAttached) {
+          initialScrollController.scrollTo(
+              index: Globals.chapterVerse, // from verse selector
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOutCubic);
+        }
+        // } else {
+        //   print('Controller in NOT attached SCROLLTO ${Globals.scrollTo}');
+        // }
+      },
+    );
   }
 
   Future<List<Bible>> getBookText(int book, int ch) async {
@@ -59,6 +66,17 @@ class _MainChaptersState extends State<MainChapters> {
     Future<List<Bible>> _futureBibleList = getBookText(book, ch);
     bible = await _futureBibleList;
     return bible;
+  }
+
+  ItemScrollController itemScrollControllerSelector() {
+    ItemScrollController isc;
+    if (!Globals.scrollTo) {
+      isc = ItemScrollController(); // needed for PageView
+    } else {
+      isc = initialScrollController; // initial scroll from verse selector
+      Globals.scrollTo = false;
+    }
+    return isc;
   }
 
   Color colorSelector(int index) {
@@ -134,6 +152,37 @@ class _MainChaptersState extends State<MainChapters> {
     );
   }
 
+  showVerse(snapshot, index) {
+    return Container(
+      color: Colors.white,
+      child: Text(
+        '${snapshot.data[index].v}. ${snapshot.data[index].t}',
+        style: const TextStyle(fontSize: 16.0),
+      ),
+      margin: const EdgeInsets.only(bottom: 6.0),
+    );
+  }
+
+  animateColor(snapshot, index) {
+    TweenAnimationBuilder<Color>(
+      builder: (BuildContext _, Color value, Widget __) {
+        return Container(
+          color: value,
+          child: Text(
+            '${snapshot.data[index].v}. ${snapshot.data[index].t}',
+            style: const TextStyle(fontSize: 16.0),
+          ),
+          margin: const EdgeInsets.only(bottom: 6.0),
+        );
+      },
+      duration: const Duration(milliseconds: 500),
+      tween: ColorTween(
+        begin: Colors.green,
+        end: Colors.white,
+      ),
+    );
+  }
+
   Widget showListView(int book, int ch) {
     return Container(
       padding: const EdgeInsets.all(15.0),
@@ -144,8 +193,8 @@ class _MainChaptersState extends State<MainChapters> {
             return ScrollablePositionedList.builder(
               //return ListView.builder(
               itemCount: snapshot.data.length,
-              itemScrollController: itemScrollController,
-              itemPositionsListener: itemPositionsListener,
+              itemScrollController: itemScrollControllerSelector(),
+              //itemPositionsListener: itemPositionsListener,
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () {
@@ -171,13 +220,16 @@ class _MainChaptersState extends State<MainChapters> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Container(
-                          child: Text(
-                            '${snapshot.data[index].v}. ${snapshot.data[index].t}',
-                            style: const TextStyle(fontSize: 16.0),
-                          ),
-                          margin: const EdgeInsets.only(bottom: 6.0),
-                        ),
+                        child: showVerse(snapshot, index),
+                        //child: animateColor(snapshot, index),
+                        // child: Container(
+                        //   color: Colors.green,
+                        //   child: Text(
+                        //     '${snapshot.data[index].v}. ${snapshot.data[index].t}',
+                        //     style: const TextStyle(fontSize: 16.0),
+                        //   ),
+                        //   margin: const EdgeInsets.only(bottom: 6.0),
+                        // ),
                       ),
                     ],
                   ),
@@ -232,7 +284,13 @@ class _MainChaptersState extends State<MainChapters> {
   @override
   Widget build(BuildContext context) {
     pageController = PageController(initialPage: Globals.bookChapter - 1);
+    //itemScrollController = ItemScrollController(); // works with verse selector
     _dbQueries = DbQueries();
-    return showListView(1, 1); //chaptersList(Globals.bibleBook); // Bible book
+    // Future.delayed(const Duration(milliseconds: 1000), () {
+    //   MainChapters.scrollToIndex();
+    // });
+    //scrollToIndex();
+
+    return chaptersList(Globals.bibleBook); // Bible book
   }
 }
