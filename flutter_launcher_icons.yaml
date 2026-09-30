@@ -1,0 +1,5 @@
+flutter_launcher_icons:
+  android: true
+  image_path: assets/icons/book_launcher.png
+  adaptive_icon_background: "#5B3A29"
+  adaptive_icon_foreground: assets/icons/book_foreground.png
