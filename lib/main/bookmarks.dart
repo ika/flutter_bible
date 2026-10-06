@@ -35,6 +35,8 @@ class HandleBookmarksCodeState extends State<HandleBookmarksCode> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final mq = MediaQuery.of(context);
     final title = switch (Globals.type) {
       1 => 'Bookmarks',
@@ -58,11 +60,24 @@ class HandleBookmarksCodeState extends State<HandleBookmarksCode> {
             child: Column(
               children: [
                 const _BottomSheetDragHandle(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium,
+                Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                   ),
                 ),
                 Expanded(
