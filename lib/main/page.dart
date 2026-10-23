@@ -2,10 +2,9 @@
 // Main Page
 //----------------------------------------
 
+import 'dart:async';
 import 'dart:convert';
-import 'dart:ui';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -14,6 +13,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../bookmarks/preferences.dart';
 import '../bookmarks/service.dart';
 import '../collections/bible.dart';
+import '../collections/booklist.dart';
+import '../collections/bookmark.dart';
 import '../constants.dart';
 import '../database.dart';
 import '../globals.dart';
@@ -26,6 +27,7 @@ part './selector.dart';
 part './bookmarks.dart';
 part './bottom.dart';
 part './menu.dart';
+part './booksel.dart';
 part './search.dart';
 
 class MainPage extends StatefulWidget {
@@ -43,6 +45,12 @@ class MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _chaptersFuture = _loadChapters();
+  }
+
+  @override
+  void dispose() {
+    _pageController?.dispose();
+    super.dispose();
   }
 
   Future<List<_Chapter>> _loadChapters() async {
@@ -72,7 +80,9 @@ class MainPageState extends State<MainPage> {
     _pageController?.dispose();
     _pageController = null;
     _chaptersFuture = _loadChapters();
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _handleMenu() async {
@@ -87,13 +97,28 @@ class MainPageState extends State<MainPage> {
 
     switch (menuAction) {
       case _MenuAction.bookmarks:
-        await _handleBookmark(); // bookmarks =1 highlights =2
+        await _handleBookmark();
       case _MenuAction.selector:
         await _handleSelector();
+      case _MenuAction.books:
+        await _handleBooks();
       case _MenuAction.search:
         await _handleSearch();
       case null:
         break;
+    }
+  }
+
+  Future<void> _handleBooks() async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const HandleBookListCode(),
+    );
+
+    if (result == true && mounted) {
+      _refreshAfterSelection();
     }
   }
 
@@ -102,7 +127,7 @@ class MainPageState extends State<MainPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => HandleSearchCode(),
+      builder: (_) => const HandleSearchCode(),
     );
 
     if (searchReturn == true && mounted) {
@@ -148,26 +173,31 @@ class MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            InkWell(
-              borderRadius: BorderRadius.circular(4),
-              onTap: _handleVersions,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                child: Text(Globals.bibleVersionName.toUpperCase()),
-              ),
+        backgroundColor: colorScheme.inversePrimary,
+        title: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: _handleVersions,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${Globals.bibleVersionName.toUpperCase()} · ${BibleBooks.getBookAbbrByNumber(Globals.bibleBookNumber)} ${BibleBooks.formatNameInLanguage(Globals.bibleChapterNumber)}',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.arrow_drop_down, size: 20),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              '${BibleBooks.getBookAbbrByNumber(Globals.bibleBookNumber)} ${BibleBooks.formatNameInLanguage(Globals.bibleChapterNumber)}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+          ),
         ),
         actions: [
           IconButton(
@@ -177,10 +207,7 @@ class MainPageState extends State<MainPage> {
           ),
         ],
       ),
-      body: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(
-          dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
-        ),
+      body: SafeArea(
         child: FutureBuilder<List<_Chapter>>(
           future: _chaptersFuture,
           builder: (context, snapshot) {
@@ -189,12 +216,22 @@ class MainPageState extends State<MainPage> {
             } else if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No chapters found.'));
+              return const Center(child: Text('No verses found.'));
             } else {
               final chapters = snapshot.data!;
 
+              final initialChapterIndex = chapters.indexWhere(
+                (c) =>
+                    c.book == Globals.bibleBookNumber &&
+                    c.number == Globals.bibleChapterNumber,
+              );
+
+              final effectiveInitialIndex = initialChapterIndex != -1
+                  ? initialChapterIndex
+                  : 0;
+
               _pageController ??= PageController(
-                initialPage: Globals.bibleChapterNumber - 1,
+                initialPage: effectiveInitialIndex,
               );
 
               return PageView.builder(
@@ -222,7 +259,11 @@ class MainPageState extends State<MainPage> {
 }
 
 class _Chapter {
-  _Chapter({required this.book, required this.number, required this.verses});
+  const _Chapter({
+    required this.book,
+    required this.number,
+    required this.verses,
+  });
 
   final int book;
   final int number;
@@ -242,21 +283,71 @@ class _ChapterView extends StatefulWidget {
 
 class _ChapterViewState extends State<_ChapterView> {
   final ItemScrollController _itemScrollController = ItemScrollController();
+  StreamSubscription<void>? _bookmarkSubscription;
+  // Map of verse number to bookmark type (1 = bookmark, 2 = highlight)
+  Map<int, int> _markedVerses = {};
 
-  void _handleVerseActions(Bible bibleModel) {
-    showModalBottomSheet<void>(
+  Future<void> _handleVerseActions(Bible bibleModel) async {
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => BottomSheetWidget(bibleModel: bibleModel),
     );
+    if (mounted) {
+      _loadMarkedVerses();
+    }
   }
 
   @override
   void initState() {
     super.initState();
+    _loadMarkedVerses();
+    // Listen to changes in the local bookmark collection
+    _bookmarkSubscription = isar.localBookmarks.watchLazy().listen((_) {
+      if (mounted) {
+        _loadMarkedVerses();
+      }
+    });
+
     if (Globals.bibleVerseNumber > 1) {
       _scrollWithDelay();
+    }
+  }
+
+  @override
+  void dispose() {
+    _bookmarkSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadMarkedVerses() async {
+    try {
+      final records = await isar.localBookmarks
+          .filter()
+          .versionEqualTo(Globals.bibleVersionName)
+          .bookEqualTo(widget.chapter.book)
+          .chapterEqualTo(widget.chapter.number)
+          .not()
+          .syncStatusEqualTo(2)
+          .findAll();
+
+      final map = <int, int>{};
+      for (final r in records) {
+        // If a verse has both bookmark (1) and highlight (2), highlight takes priority
+        final existingType = map[r.verse];
+        if (existingType == null || r.type == 2) {
+          map[r.verse] = r.type;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _markedVerses = map;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading marked verses: $e');
     }
   }
 
@@ -290,49 +381,82 @@ class _ChapterViewState extends State<_ChapterView> {
   void didUpdateWidget(covariant _ChapterView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if ((oldWidget.chapter.number != widget.chapter.number ||
-        oldWidget.chapter.book != widget.chapter.book) &&
+            oldWidget.chapter.book != widget.chapter.book) &&
         Globals.bibleVerseNumber > 1) {
       _scrollWithDelay();
+    }
+    if (oldWidget.chapter.number != widget.chapter.number ||
+        oldWidget.chapter.book != widget.chapter.book) {
+      _loadMarkedVerses();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: ScrollablePositionedList.builder(
-        itemScrollController: _itemScrollController,
-        padding: const EdgeInsets.all(24),
-        initialScrollIndex: 0,
-        itemCount: widget.chapter.verses.length + 1,
-        itemBuilder: (context, index) {
-          if (index == widget.chapter.verses.length) {
-            return const SizedBox(
-              height: 480,
-            ); // Provides scroll room equivalent to ~20 empty lines
-          }
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-          final verse = widget.chapter.verses[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text.rich(
-              TextSpan(
-                style: Theme.of(context).textTheme.bodyLarge,
-                children: [
+    return ScrollablePositionedList.builder(
+      itemScrollController: _itemScrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      initialScrollIndex: _initialScrollIndex(),
+      itemCount: widget.chapter.verses.length + 1,
+      itemBuilder: (context, index) {
+        if (index == widget.chapter.verses.length) {
+          return const SizedBox(
+            height: 240, // Provides scroll room at the bottom
+          );
+        }
+
+        final verse = widget.chapter.verses[index];
+        final markType = _markedVerses[verse.verse];
+
+        Color? backgroundColor;
+        if (markType == 2) {
+          backgroundColor = colorScheme.tertiaryContainer;
+        } else if (markType == 1) {
+          backgroundColor = colorScheme.primaryContainer;
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Material(
+            color: backgroundColor ?? Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => _handleVerseActions(verse),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 6,
+                ),
+                child: Text.rich(
                   TextSpan(
-                    text: '${BibleBooks.formatNumberInLanguage(verse.verse)} ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      height: 1.5,
+                      fontSize: 16,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '${BibleBooks.formatNumberInLanguage(verse.verse)} ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      TextSpan(
+                        text: verse.text,
+                      ),
+                    ],
                   ),
-                  TextSpan(
-                    text: verse.text,
-                    recognizer: TapGestureRecognizer()
-                      ..onTap = () => _handleVerseActions(verse),
-                  ),
-                ],
+                ),
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -342,29 +466,32 @@ class _BottomSheetDragHandle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 8),
-        Container(
-          width: 40,
-          height: 4,
-          decoration: BoxDecoration(
-            color: Colors.black26,
-            borderRadius: BorderRadius.circular(2),
-          ),
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        width: 36,
+        height: 4,
+        decoration: BoxDecoration(
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(2),
         ),
-        const SizedBox(height: 8),
-      ],
+      ),
     );
   }
 }
 
 void showVerseWordsDialog(BuildContext context, Bible bibleModel) {
   Navigator.pop(context);
-  final words = bibleModel.text
-      .trim()
-      .split(RegExp(r'\s+'))
-      .where((word) => word.isNotEmpty)
+  final rawWords = bibleModel.text.trim().split(RegExp(r'\s+'));
+  final words = rawWords
+      .map(
+        (w) => w.replaceAll(
+          RegExp(r'^[^a-zA-Z0-9\u00C0-\u024F]+|[^a-zA-Z0-9\u00C0-\u024F]+$'),
+          '',
+        ),
+      )
+      .where((w) => w.isNotEmpty)
       .toList();
 
   showDialog(
@@ -417,3 +544,4 @@ void _onWordTap(BuildContext context, Bible bibleModel, String word) {
     ),
   );
 }
+

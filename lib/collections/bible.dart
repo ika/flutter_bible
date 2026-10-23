@@ -10,4 +10,5 @@ class Bible {
   late int chapter; // chapter
   late int verse; // verse
   late String text; // text
+  bool active = true; // active state of version
 }

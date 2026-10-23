@@ -8,16 +8,10 @@ class HandleSearchCode extends StatefulWidget {
 }
 
 class HandleSearchCodeState extends State<HandleSearchCode> {
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-  List<Bible> _results = [];
-  bool _searching = false;
-  int _searchRequestId = 0;
-  //late String bibleVersionName;
+  static const _lastQueryKey = 'lastSearchQuery';
+  static const _lastResultsKey = 'lastSearchResults';
 
-  String _selectedCategory = 'All';
-
-  final Map<String, List<int>> _categories = {
+  static final Map<String, List<int>> _categories = {
     'All': List.generate(66, (i) => i + 1),
     'Old Testament': List.generate(39, (i) => i + 1),
     'New Testament': List.generate(27, (i) => i + 40),
@@ -33,86 +27,111 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
     'Revelation': List.generate(1, (i) => i + 66),
   };
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  List<Bible> _results = [];
+  bool _searching = false;
+  int _searchRequestId = 0;
+  String _selectedCategory = 'All';
+
   @override
   void initState() {
     super.initState();
-    getSearchQuery().then((query) {
-      if (mounted && query.isNotEmpty) {
-        setState(() {
+    _loadSavedSearch();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSavedSearch() async {
+    final prefs = await SharedPreferences.getInstance();
+    final query = prefs.getString(_lastQueryKey) ?? '';
+    final jsonString = prefs.getString(_lastResultsKey);
+
+    List<Bible> results = [];
+    if (jsonString != null && jsonString.isNotEmpty) {
+      try {
+        final List<dynamic> jsonList = jsonDecode(jsonString);
+        results = jsonList.map((item) {
+          return Bible()
+            ..id = item['id'] ?? Isar.autoIncrement
+            ..version = item['version'] ?? ''
+            ..book = item['book'] ?? 1
+            ..chapter = item['chapter'] ?? 1
+            ..verse = item['verse'] ?? 1
+            ..text = item['text'] ?? '';
+        }).toList();
+      } catch (e) {
+        debugPrint('Error fetching last search results: $e');
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        if (query.isNotEmpty) {
           _searchQuery = query;
           _searchController.text = query;
-        });
-      }
-    });
-    fetchLastSearch().then((results) {
-      if (mounted) {
-        setState(() {
-          _results = results;
-        });
-      }
-    });
+        }
+        _results = results;
+      });
+    }
   }
 
-  Future<List<Bible>> fetchLastSearch() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString('lastSearchResults');
-    if (jsonString == null || jsonString.isEmpty) {
-      return [];
-    }
+  Future<void> _saveSearchResults(String query, List<Bible> results) async {
     try {
-      final List<dynamic> jsonList = jsonDecode(jsonString);
-      return jsonList.map((item) {
-        return Bible()
-          ..id = item['id'] ?? Isar.autoIncrement
-          ..version = item['version'] ?? ''
-          ..book = item['book'] ?? 1
-          ..chapter = item['chapter'] ?? 1
-          ..verse = item['verse'] ?? 1
-          ..text = item['text'] ?? '';
-      }).toList();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_lastQueryKey, query);
+      final jsonList = results
+          .map(
+            (verse) => {
+              'id': verse.id,
+              'version': verse.version,
+              'book': verse.book,
+              'chapter': verse.chapter,
+              'verse': verse.verse,
+              'text': verse.text,
+            },
+          )
+          .toList();
+      await prefs.setString(_lastResultsKey, jsonEncode(jsonList));
     } catch (e) {
-      debugPrint('Error fetching last search results: $e');
-      return [];
+      debugPrint('Error saving search results: $e');
     }
   }
 
-  Future<void> saveSearchQuery(String query) async {
+  Future<void> _clearSearchResults() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('lastSearchQuery', query);
-  }
-
-  Future<String> getSearchQuery() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('lastSearchQuery') ?? '';
-  }
-
-  Future<String> checkSearchQuery(String query) async {
-    if (query.isEmpty) {
-      return await getSearchQuery();
+    await prefs.remove(_lastQueryKey);
+    await prefs.remove(_lastResultsKey);
+    _searchController.clear();
+    if (mounted) {
+      setState(() {
+        _searchQuery = '';
+        _results = [];
+      });
     }
-    return query;
   }
 
-  bool _isAsciiAlphaNum(String char) {
+  static bool _isAsciiAlphaNum(String char) {
     final codeUnit = char.codeUnitAt(0);
-    final isUpper = codeUnit >= 65 && codeUnit <= 90;
-    final isLower = codeUnit >= 97 && codeUnit <= 122;
-    final isDigit = codeUnit >= 48 && codeUnit <= 57;
-    return isUpper || isLower || isDigit;
+    return (codeUnit >= 65 && codeUnit <= 90) ||
+        (codeUnit >= 97 && codeUnit <= 122) ||
+        (codeUnit >= 48 && codeUnit <= 57);
   }
 
-  bool _isBoundaryBeforeIndex(String text, int index) {
+  static bool _isBoundaryBeforeIndex(String text, int index) {
     if (index == 0) return true;
 
     final prevIndex = index - 1;
     final prevChar = text[prevIndex];
 
-    // Normal letters/digits continue the same word.
     if (_isAsciiAlphaNum(prevChar)) {
       return false;
     }
 
-    // Apostrophes and hyphens inside a token are treated as joiners.
     if ((prevChar == "'" || prevChar == '-') &&
         prevIndex > 0 &&
         _isAsciiAlphaNum(text[prevIndex - 1]) &&
@@ -123,7 +142,7 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
     return true;
   }
 
-  bool _hasWordPrefixMatch(String text, String query) {
+  static bool _hasWordPrefixMatch(String text, String query) {
     final lowerText = text.toLowerCase();
     final lowerQuery = query.toLowerCase();
 
@@ -154,9 +173,6 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
       return;
     }
 
-    // save search query to history
-    saveSearchQuery(originalQuery);
-
     setState(() {
       _searching = true;
       _results = [];
@@ -175,26 +191,11 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
           .textContains(originalQuery, caseSensitive: false)
           .findAll();
 
-      final filtered = candidateResults
+      results = candidateResults
           .where((verse) => _hasWordPrefixMatch(verse.text, originalQuery))
           .toList();
 
-      results = filtered;
-
-      final prefs = await SharedPreferences.getInstance();
-      final jsonList = results
-          .map(
-            (verse) => {
-              'id': verse.id,
-              'version': verse.version,
-              'book': verse.book,
-              'chapter': verse.chapter,
-              'verse': verse.verse,
-              'text': verse.text,
-            },
-          )
-          .toList();
-      await prefs.setString('lastSearchResults', jsonEncode(jsonList));
+      await _saveSearchResults(originalQuery, results);
     } catch (e) {
       debugPrint('Search error: $e');
     }
@@ -208,17 +209,6 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
     }
   }
 
-  void _clearSearchResults() async {
-    saveSearchQuery('');
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('lastSearchResults');
-    _searchController.clear();
-    setState(() {
-      _searchQuery = '';
-      _results = [];
-    });
-  }
-
   void _showCategorySelector() {
     showModalBottomSheet(
       context: context,
@@ -227,102 +217,99 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
-        final mq = MediaQuery.of(context);
-        final theme = Theme.of(context);
+      builder: (bottomSheetContext) {
+        final theme = Theme.of(bottomSheetContext);
         final colorScheme = theme.colorScheme;
-        const tileContentPadding = EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        );
-        const leadingSize = 50.0;
+        final size = MediaQuery.sizeOf(bottomSheetContext);
+        final bottomInset = MediaQuery.viewInsetsOf(bottomSheetContext).bottom;
         final cats = _categories.keys.toList();
 
         return SafeArea(
           top: false,
           child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            constraints: BoxConstraints(maxHeight: mq.size.height * 0.8),
+            constraints: BoxConstraints(maxHeight: size.height * 0.8),
             decoration: BoxDecoration(
               color: theme.canvasColor,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(20),
               ),
             ),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const _BottomSheetDragHandle(),
-                    const SizedBox(height: 8),
-                    ...cats.map((cat) {
-                      final isSelected = _selectedCategory == cat;
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Card(
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: colorScheme.outlineVariant.withValues(
-                                  alpha: 0.5,
-                                ),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, bottomInset + 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _BottomSheetDragHandle(),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: cats.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final cat = cats[index];
+                        final isSelected = _selectedCategory == cat;
+                        return Card(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: colorScheme.outlineVariant.withValues(
+                                alpha: 0.5,
                               ),
                             ),
-                            child: ListTile(
-                              contentPadding: tileContentPadding,
-                              leading: Container(
-                                width: leadingSize,
-                                height: leadingSize,
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? colorScheme.primaryContainer
-                                      : colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    cat.isNotEmpty ? cat[0].toUpperCase() : '?',
-                                    style: TextStyle(
-                                      color: isSelected
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            leading: Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? colorScheme.primaryContainer
+                                    : colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  cat.isNotEmpty ? cat[0].toUpperCase() : '?',
+                                  style: TextStyle(
+                                    color: isSelected
                                         ? colorScheme.onPrimaryContainer
                                         : colorScheme.onSurface,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                    ),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
                                   ),
                                 ),
                               ),
-                              title: Text(cat),
-                              subtitle: Text(
-                                '${_categories[cat]?.length ?? 0} books',
-                              ),
-                              selected: isSelected,
-                              trailing: isSelected
-                                  ? Icon(Icons.check, color: theme.primaryColor)
-                                  : null,
-                              onTap: () {
-                                setState(() {
-                                  _selectedCategory = cat;
-                                });
-                                Navigator.pop(context);
-                                if (_searchController.text.isNotEmpty) {
-                                  _performSearch();
-                                }
-                              },
                             ),
+                            title: Text(cat),
+                            subtitle: Text(
+                              '${_categories[cat]?.length ?? 0} books',
+                            ),
+                            selected: isSelected,
+                            trailing: isSelected
+                                ? Icon(Icons.check, color: theme.primaryColor)
+                                : null,
+                            onTap: () {
+                              setState(() {
+                                _selectedCategory = cat;
+                              });
+                              Navigator.pop(bottomSheetContext);
+                              if (_searchController.text.isNotEmpty) {
+                                _performSearch();
+                              }
+                            },
                           ),
-                          const SizedBox(height: 8),
-                        ],
-                      );
-                    }),
-                  ],
-                ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -331,26 +318,17 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
     );
   }
 
-  Widget _highlightText(String text, String query, BuildContext context) {
-    return FutureBuilder<String>(
-      future: checkSearchQuery(query),
-      builder: (context, snapshot) {
-        final String resolvedQuery = snapshot.data ?? query;
-        return _buildHighlightedRichText(text, resolvedQuery, context);
-      },
-    );
-  }
-
-  RichText _buildHighlightedRichText(
+  Widget _buildHighlightedText(
     String text,
     String query,
-    BuildContext context,
+    ColorScheme colorScheme,
   ) {
     if (query.isEmpty) {
-      return RichText(
-        text: TextSpan(
-          text: text,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      return Text(
+        text,
+        style: TextStyle(
+          color: colorScheme.onSurface,
+          fontSize: 16,
         ),
       );
     }
@@ -375,9 +353,9 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
             indexOfHighlight + query.length,
           ),
           style: TextStyle(
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            backgroundColor: colorScheme.primaryContainer,
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
+            color: colorScheme.onPrimaryContainer,
           ),
         ),
       );
@@ -389,10 +367,10 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
       spans.add(TextSpan(text: text.substring(start)));
     }
 
-    return RichText(
-      text: TextSpan(
+    return Text.rich(
+      TextSpan(
         style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface,
+          color: colorScheme.onSurface,
           fontSize: 16,
         ),
         children: spans,
@@ -402,18 +380,20 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final mq = MediaQuery.of(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final size = MediaQuery.sizeOf(context);
+
     return SafeArea(
       top: false,
       child: Material(
-        color: Theme.of(context).canvasColor,
+        color: theme.canvasColor,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         clipBehavior: Clip.antiAlias,
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: mq.size.height * 0.8),
+          constraints: BoxConstraints(maxHeight: size.height * 0.8),
           child: Padding(
             padding: EdgeInsets.all(
               HandleMainSelectorCodeState.gridMarginSpacing,
@@ -446,54 +426,42 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
                   child: Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          16.0,
-                          12.0,
-                          16.0,
-                          8.0,
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _searchController,
-                                decoration: InputDecoration(
-                                  hintText: 'Search...',
-                                  prefixIcon: const Icon(Icons.search),
-                                  filled: true,
-                                  fillColor: colorScheme.surface.withValues(
-                                    alpha: 0.04,
-                                  ),
-                                  // outline border + focused/disabled variants
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                    borderSide: BorderSide(
-                                      color: colorScheme.outline,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                    borderSide: BorderSide(
-                                      color: colorScheme.outline,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                    borderSide: BorderSide(
-                                      color: colorScheme.primary,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 12.0,
-                                  ),
-                                ),
-                                onSubmitted: (_) => _performSearch(),
+                        padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 8.0),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search...',
+                            prefixIcon: const Icon(Icons.search),
+                            filled: true,
+                            fillColor: colorScheme.surface.withValues(
+                              alpha: 0.04,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide(
+                                color: colorScheme.outline,
+                                width: 1,
                               ),
                             ),
-                          ],
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide(
+                                color: colorScheme.outline,
+                                width: 1,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide(
+                                color: colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12.0,
+                            ),
+                          ),
+                          onSubmitted: (_) => _performSearch(),
                         ),
                       ),
                       Padding(
@@ -528,10 +496,10 @@ class HandleSearchCodeState extends State<HandleSearchCode> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    subtitle: _highlightText(
+                                    subtitle: _buildHighlightedText(
                                       bible.text,
                                       _searchQuery,
-                                      context,
+                                      colorScheme,
                                     ),
                                     onTap: () {
                                       // Navigate to the specific verse

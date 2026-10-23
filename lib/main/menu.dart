@@ -1,31 +1,26 @@
 part of 'page.dart';
 
-enum _MenuAction { bookmarks, selector, search }
+enum _MenuAction { bookmarks, selector, books, search }
 
 class MenuBottomSheet extends StatelessWidget {
   const MenuBottomSheet({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final mq = MediaQuery.of(context);
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    const tileContentPadding = EdgeInsets.symmetric(
-      horizontal: 16,
-      vertical: 8,
-    );
-    const leadingSize = 50.0;
+    final size = MediaQuery.sizeOf(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return SafeArea(
       top: false,
       child: Container(
-        constraints: BoxConstraints(maxHeight: mq.size.height * 0.8),
+        constraints: BoxConstraints(maxHeight: size.height * 0.8),
         decoration: BoxDecoration(
-          color: Theme.of(context).canvasColor,
+          color: theme.canvasColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SingleChildScrollView(
-          padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
+          padding: EdgeInsets.only(bottom: bottomInset),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             child: Column(
@@ -34,148 +29,94 @@ class MenuBottomSheet extends StatelessWidget {
               children: [
                 const _BottomSheetDragHandle(),
                 const SizedBox(height: 16),
-                Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: tileContentPadding,
-                    leading: Container(
-                      width: leadingSize,
-                      height: leadingSize,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'B',
-                          style: TextStyle(
-                            color: colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    title: Text('Bookmarks'),
-                    onTap: () {
-                      Globals.type = 1;
-                      Navigator.pop(context, _MenuAction.bookmarks);
-                    },
-                  ),
+                _MenuCard(
+                  symbol: 'B',
+                  title: 'Bookmarks',
+                  onTap: () {
+                    Globals.type = 1;
+                    Navigator.pop(context, _MenuAction.bookmarks);
+                  },
                 ),
-                Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: tileContentPadding,
-                    leading: Container(
-                      width: leadingSize,
-                      height: leadingSize,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'B',
-                          style: TextStyle(
-                            color: colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    title: Text('Highlights'),
-                    onTap: () {
-                      Globals.type = 2;
-                      Navigator.pop(context, _MenuAction.bookmarks);
-                    },
-                  ),
+                _MenuCard(
+                  symbol: 'B',
+                  title: 'Highlights',
+                  onTap: () {
+                    Globals.type = 2;
+                    Navigator.pop(context, _MenuAction.bookmarks);
+                  },
                 ),
-                Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: tileContentPadding,
-                    leading: Container(
-                      width: leadingSize,
-                      height: leadingSize,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'S',
-                          style: TextStyle(
-                            color: colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    title: Text('Selector'),
-                    onTap: () {
-                      Navigator.pop(context, _MenuAction.selector);
-                    },
-                  ),
+                _MenuCard(
+                  symbol: 'S',
+                  title: 'Selector',
+                  onTap: () => Navigator.pop(context, _MenuAction.selector),
                 ),
-                Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: tileContentPadding,
-                    leading: Container(
-                      width: leadingSize,
-                      height: leadingSize,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'S',
-                          style: TextStyle(
-                            color: colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    title: Text('Search'),
-                    onTap: () {
-                      Navigator.pop(context, _MenuAction.search);
-                    },
-                  ),
+                _MenuCard(
+                  symbol: 'B',
+                  title: 'Books',
+                  onTap: () => Navigator.pop(context, _MenuAction.books),
+                ),
+                _MenuCard(
+                  symbol: 'S',
+                  title: 'Search',
+                  onTap: () => Navigator.pop(context, _MenuAction.search),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MenuCard extends StatelessWidget {
+  const _MenuCard({
+    required this.symbol,
+    required this.title,
+    required this.onTap,
+  });
+
+  final String symbol;
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
+        ),
+        leading: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(
+              symbol,
+              style: TextStyle(
+                color: colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ),
+        ),
+        title: Text(title),
+        onTap: onTap,
       ),
     );
   }

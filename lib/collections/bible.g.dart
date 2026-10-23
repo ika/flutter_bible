@@ -17,28 +17,33 @@ const BibleSchema = CollectionSchema(
   name: r'Bible',
   id: 8501962087964691709,
   properties: {
-    r'book': PropertySchema(
+    r'active': PropertySchema(
       id: 0,
+      name: r'active',
+      type: IsarType.bool,
+    ),
+    r'book': PropertySchema(
+      id: 1,
       name: r'book',
       type: IsarType.long,
     ),
     r'chapter': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'chapter',
       type: IsarType.long,
     ),
     r'text': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'text',
       type: IsarType.string,
     ),
     r'verse': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'verse',
       type: IsarType.long,
     ),
     r'version': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'version',
       type: IsarType.string,
     )
@@ -74,11 +79,12 @@ void _bibleSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.book);
-  writer.writeLong(offsets[1], object.chapter);
-  writer.writeString(offsets[2], object.text);
-  writer.writeLong(offsets[3], object.verse);
-  writer.writeString(offsets[4], object.version);
+  writer.writeBool(offsets[0], object.active);
+  writer.writeLong(offsets[1], object.book);
+  writer.writeLong(offsets[2], object.chapter);
+  writer.writeString(offsets[3], object.text);
+  writer.writeLong(offsets[4], object.verse);
+  writer.writeString(offsets[5], object.version);
 }
 
 Bible _bibleDeserialize(
@@ -88,12 +94,13 @@ Bible _bibleDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Bible();
-  object.book = reader.readLong(offsets[0]);
-  object.chapter = reader.readLong(offsets[1]);
+  object.active = reader.readBool(offsets[0]);
+  object.book = reader.readLong(offsets[1]);
+  object.chapter = reader.readLong(offsets[2]);
   object.id = id;
-  object.text = reader.readString(offsets[2]);
-  object.verse = reader.readLong(offsets[3]);
-  object.version = reader.readString(offsets[4]);
+  object.text = reader.readString(offsets[3]);
+  object.verse = reader.readLong(offsets[4]);
+  object.version = reader.readString(offsets[5]);
   return object;
 }
 
@@ -105,14 +112,16 @@ P _bibleDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 1:
       return (reader.readLong(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
-    case 3:
       return (reader.readLong(offset)) as P;
+    case 3:
+      return (reader.readString(offset)) as P;
     case 4:
+      return (reader.readLong(offset)) as P;
+    case 5:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -207,6 +216,15 @@ extension BibleQueryWhere on QueryBuilder<Bible, Bible, QWhereClause> {
 }
 
 extension BibleQueryFilter on QueryBuilder<Bible, Bible, QFilterCondition> {
+  QueryBuilder<Bible, Bible, QAfterFilterCondition> activeEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'active',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<Bible, Bible, QAfterFilterCondition> bookEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -679,6 +697,18 @@ extension BibleQueryObject on QueryBuilder<Bible, Bible, QFilterCondition> {}
 extension BibleQueryLinks on QueryBuilder<Bible, Bible, QFilterCondition> {}
 
 extension BibleQuerySortBy on QueryBuilder<Bible, Bible, QSortBy> {
+  QueryBuilder<Bible, Bible, QAfterSortBy> sortByActive() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'active', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Bible, Bible, QAfterSortBy> sortByActiveDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'active', Sort.desc);
+    });
+  }
+
   QueryBuilder<Bible, Bible, QAfterSortBy> sortByBook() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'book', Sort.asc);
@@ -741,6 +771,18 @@ extension BibleQuerySortBy on QueryBuilder<Bible, Bible, QSortBy> {
 }
 
 extension BibleQuerySortThenBy on QueryBuilder<Bible, Bible, QSortThenBy> {
+  QueryBuilder<Bible, Bible, QAfterSortBy> thenByActive() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'active', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Bible, Bible, QAfterSortBy> thenByActiveDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'active', Sort.desc);
+    });
+  }
+
   QueryBuilder<Bible, Bible, QAfterSortBy> thenByBook() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'book', Sort.asc);
@@ -815,6 +857,12 @@ extension BibleQuerySortThenBy on QueryBuilder<Bible, Bible, QSortThenBy> {
 }
 
 extension BibleQueryWhereDistinct on QueryBuilder<Bible, Bible, QDistinct> {
+  QueryBuilder<Bible, Bible, QDistinct> distinctByActive() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'active');
+    });
+  }
+
   QueryBuilder<Bible, Bible, QDistinct> distinctByBook() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'book');
@@ -852,6 +900,12 @@ extension BibleQueryProperty on QueryBuilder<Bible, Bible, QQueryProperty> {
   QueryBuilder<Bible, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<Bible, bool, QQueryOperations> activeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'active');
     });
   }
 
